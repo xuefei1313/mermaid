@@ -845,6 +845,13 @@ export interface ErDiagramConfig extends BaseDiagramConfig {
  */
 export interface PieDiagramConfig extends BaseDiagramConfig {
   /**
+   * Decides which rendering engine to use for pie chart rendering.
+   * - default: Use the original D3-based pie chart renderer
+   * - vchart: Use VChart for enhanced rendering capabilities
+   *
+   */
+  renderer?: 'default' | 'vchart';
+  /**
    * Axial position of slice's label from zero at the center to 1 at the outside edges.
    *
    */
@@ -935,6 +942,13 @@ export interface QuadrantChartConfig extends BaseDiagramConfig {
  * via the `definition` "XYChartConfig".
  */
 export interface XYChartConfig extends BaseDiagramConfig {
+  /**
+   * Decides which rendering engine to use for XY chart rendering.
+   * - default: Use the original custom XY chart renderer
+   * - vchart: Use VChart for enhanced rendering capabilities
+   *
+   */
+  renderer?: 'default' | 'vchart';
   /**
    * width of the chart
    */
@@ -1493,6 +1507,13 @@ export interface C4DiagramConfig extends BaseDiagramConfig {
  * via the `definition` "SankeyDiagramConfig".
  */
 export interface SankeyDiagramConfig extends BaseDiagramConfig {
+  /**
+   * Decides which rendering engine to use for sankey diagram rendering.
+   * - default: Use the original D3-sankey based renderer
+   * - vchart: Use VChart for enhanced rendering capabilities
+   *
+   */
+  renderer?: 'default' | 'vchart';
   width?: number;
   height?: number;
   /**

@@ -236,6 +236,32 @@ export const draw = (txt: string, id: string, _version: string, diagObj: Diagram
   }
 };
 
-export default {
-  draw,
+// 导入VChart渲染器
+import { drawWithVChart } from './xychartVChartRenderer.js';
+
+// 条件渲染器
+const conditionalDraw = async (
+  text: string,
+  id: string,
+  _version: string,
+  diagObj: Diagram
+): Promise<void> => {
+  const db = diagObj.db as typeof XYChartDB;
+  const config = db.getChartConfig();
+
+  // 检查是否使用VChart渲染器
+  if (config.renderer === 'vchart') {
+    try {
+      // 检查VChart是否可用
+      await import('@visactor/vchart');
+      return await drawWithVChart(text, id, _version, diagObj);
+    } catch (_error) {
+      // VChart not available, fall back to default renderer
+    }
+  }
+
+  // 使用默认渲染器
+  return draw(text, id, _version, diagObj);
 };
+
+export const renderer = { draw: conditionalDraw };

@@ -141,8 +141,10 @@ typeof
 typestr
 unshift
 urlsafe
+vchart
 verifymethod
 VERIFYMTHD
+visactor
 WARN_DOCSDIR_DOESNT_MATCH
 xhost
 yaxis

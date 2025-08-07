@@ -30,7 +30,7 @@ const alignmentsMap: Record<
 };
 
 /**
- * Draws Sankey diagram.
+ * Default Sankey diagram renderer using D3.
  *
  * @param text - The text of the diagram
  * @param id - The id of the diagram which will be used as a DOM element id¨
@@ -203,6 +203,31 @@ export const draw = function (text: string, id: string, _version: string, diagOb
   setupGraphViewbox(undefined, svg, 0, useMaxWidth);
 };
 
-export default {
-  draw,
+// 条件渲染器
+const conditionalDraw = async (
+  text: string,
+  id: string,
+  _version: string,
+  diagObj: Diagram
+): Promise<void> => {
+  const { sankey: conf } = getConfig();
+  const defaultSankeyConfig = defaultConfig.sankey!;
+
+  // 检查是否使用VChart渲染器
+  const renderer = conf?.renderer ?? defaultSankeyConfig.renderer!;
+  if (renderer === 'vchart') {
+    try {
+      // 检查VChart是否可用
+      await import('@visactor/vchart');
+      const { drawWithVChart } = await import('./sankeyVChartRenderer.js');
+      return await drawWithVChart(text, id, _version, diagObj);
+    } catch (_error) {
+      // VChart not available, fall back to default renderer
+    }
+  }
+
+  // 使用默认D3渲染器
+  return draw(text, id, _version, diagObj);
 };
+
+export const renderer = { draw: conditionalDraw };
