@@ -1,8 +1,9 @@
 import type { DrawDefinition } from '../../diagram-api/types.js';
 import { getConfig } from '../../diagram-api/diagramAPI.js';
 import { log } from '../../logger.js';
-import { VChartRenderer } from '../../rendering-util/VChartRenderer.js';
 import { cleanAndMerge } from '../../utils.js';
+import { selectSvgElement } from '../../rendering-util/selectSvgElement.js';
+import { configureSvgSize } from '../../setupGraphViewbox.js';
 
 /**
  * 甘特图任务数据接口
@@ -45,32 +46,31 @@ interface GanttConfig {
 }
 
 /**
- * VChart甘特图数据项接口
+ * VTable甘特图数据项接口
  */
-interface VChartGanttDataItem {
+interface VTableGanttDataItem {
   id: string;
-  name: string;
+  taskName: string;
   section: string;
-  start: number;
-  end: number;
+  startTime: string;
+  endTime: string;
   duration: number;
   progress: number;
   type: string;
-  row: number;
   order: number;
   classes: string[];
-  taskName: string;
-  startDate: number;
-  endDate: number;
-  group: string;
   status: string;
+  done: boolean;
+  active: boolean;
+  crit: boolean;
+  milestone: boolean;
 }
 
 /**
  * 提取的甘特图数据接口
  */
 interface ExtractedGanttData {
-  tasks: VChartGanttDataItem[];
+  tasks: VTableGanttDataItem[];
   sections: string[];
   title: string;
   dateFormat: string;
@@ -80,136 +80,74 @@ interface ExtractedGanttData {
 }
 
 /**
- * 时间轴刻度配置接口
+ * VTable甘特图配置接口
  */
-interface TimeAxisTick {
-  count: number;
-  unit: string;
-}
-
-/**
- * VChart规格接口
- */
-interface VChartSpec {
-  type: string;
-  data: {
-    id: string;
-    values: VChartGanttDataItem[];
+interface VTableGanttConfig {
+  container?: string | HTMLElement;
+  data: VTableGanttDataItem[];
+  columns: {
+    title: string;
+    field: string;
+    width?: number;
+    style?: {
+      color?: string;
+      bgColor?: string;
+      fontWeight?: string;
+    };
   }[];
-  taskField: string;
-  startField: string;
-  endField: string;
-  progressField: string;
-  groupField: string;
-  timeAxis: {
-    orient: string;
-    type: string;
-    min: number;
-    max: number;
-    tick: TimeAxisTick;
-    label: {
-      formatMethod: (value: number) => string;
-    };
+  timeLineHeader: {
+    scales: {
+      unit: 'day' | 'week' | 'month' | 'year';
+      step: number;
+      label: string;
+    }[];
   };
-  groupAxis: {
-    orient: string;
-    type: string;
-    domain: string[];
-    tick: { visible: boolean };
-    grid: {
-      visible: boolean;
-      style: { stroke: string; lineWidth: number };
-    };
-  };
-  task: {
-    style: {
-      fill: (datum: VChartGanttDataItem) => string;
-      stroke: string;
-      strokeWidth: number;
-      cornerRadius: number;
-    };
-    state: {
-      hover: {
-        stroke: string;
-        strokeWidth: number;
+  gantt: {
+    taskField: string;
+    startField: string;
+    endField: string;
+    progressField: string;
+    groupField: string;
+    style?: {
+      taskBar?: {
+        fill?: (datum: VTableGanttDataItem) => string;
+        stroke?: string;
+        strokeWidth?: number;
+        cornerRadius?: number;
       };
-    };
-  };
-  progress: {
-    visible: boolean;
-    style: {
-      fill: string;
-      fillOpacity: number;
-    };
-  };
-  milestone: {
-    visible: boolean;
-    style: {
-      symbolType: string;
-      size: number;
-      fill: string;
-      stroke: string;
-      strokeWidth: number;
-    };
-  };
-  label: {
-    visible: boolean;
-    position: string;
-    style: {
-      fontSize: number;
-      fill: string;
-      fontWeight: string;
-    };
-    formatMethod: (datum: VChartGanttDataItem) => string;
-  };
-  grid: {
-    visible: boolean;
-    style: {
-      stroke: string;
-      strokeOpacity: number;
-    };
-  };
-  tooltip: {
-    visible: boolean;
-    mark: {
-      content: {
-        key: string;
-        value: (datum: VChartGanttDataItem) => string;
-      }[];
-    };
-  };
-  animation: {
-    appear: {
-      duration: number;
-      easing: string;
-    };
-    enter: {
-      type: string;
-      duration: number;
-    };
-  };
-  interaction: {
-    brush: {
-      visible: boolean;
-      brushType: string;
-    };
-    zoom: {
-      visible: boolean;
-      zoomType: string;
+      progressBar?: {
+        fill?: string;
+        fillOpacity?: number;
+      };
+      milestone?: {
+        symbolType?: string;
+        size?: number;
+        fill?: string;
+        stroke?: string;
+        strokeWidth?: number;
+      };
     };
   };
   title?: {
     visible: boolean;
     text: string;
-    align: string;
-    style: {
-      fontSize: number;
-      fontWeight: string;
+    align: 'left' | 'center' | 'right';
+    style?: {
+      fontSize?: number;
+      fontWeight?: string;
       fontFamily?: string;
-      [key: string]: unknown;
+      color?: string;
     };
   };
-  background?: string;
+  theme?: {
+    fontFamily?: string;
+    colorScheme?: {
+      done?: string;
+      active?: string;
+      critical?: string;
+      normal?: string;
+    };
+  };
 }
 
 /**
@@ -226,9 +164,11 @@ interface ThemeVariables {
 }
 
 /**
- * 甘特图VChart渲染器实现
+ * 甘特图VTable渲染器实现
  */
-class GanttVChartRenderer extends VChartRenderer {
+class GanttVTableRenderer {
+  private gantt: unknown = null;
+  private container: HTMLElement | null = null;
   /**
    * 从数据库提取甘特图数据
    */
@@ -239,30 +179,29 @@ class GanttVChartRenderer extends VChartRenderer {
 
     log.debug('Gantt chart data:', { tasks, sections, title });
 
-    // 转换任务数据为VChart期望的格式
+    // 转换任务数据为VTable期望的格式
     const chartData = tasks.map((task) => {
-      const startTime = new Date(task.startTime).getTime();
-      const endTime = new Date(task.renderEndTime || task.endTime).getTime();
-      const duration = endTime - startTime;
+      const startTime = new Date(task.startTime).toISOString().split('T')[0];
+      const endTime = new Date(task.renderEndTime ?? task.endTime).toISOString().split('T')[0];
+      const duration =
+        new Date(task.renderEndTime ?? task.endTime).getTime() - new Date(task.startTime).getTime();
 
       return {
         id: task.id,
-        name: task.task,
+        taskName: task.task,
         section: task.section,
-        start: startTime,
-        end: endTime,
+        startTime: startTime,
+        endTime: endTime,
         duration: duration,
         progress: task.done ? 1 : task.active ? 0.5 : 0,
         type: this.getTaskType(task),
-        row: this.getTaskRow(task, sections),
         order: task.order,
         classes: task.classes,
-        // VChart甘特图需要的字段
-        taskName: task.task,
-        startDate: startTime,
-        endDate: endTime,
-        group: task.section,
         status: this.getTaskStatus(task),
+        done: task.done ?? false,
+        active: task.active ?? false,
+        crit: task.crit ?? false,
+        milestone: task.milestone ?? false,
       };
     });
 
@@ -313,194 +252,118 @@ class GanttVChartRenderer extends VChartRenderer {
   }
 
   /**
-   * 获取任务所在行
+   * 初始化VTable容器
    */
-  private getTaskRow(task: GanttTask, sections: string[]): number {
-    const sectionIndex = sections.indexOf(task.section);
-    return sectionIndex >= 0 ? sectionIndex : 0;
+  protected initContainer(id: string): HTMLElement {
+    const svg = selectSvgElement(id);
+    const svgNode = svg.node() as unknown as SVGElement | null;
+    const parent = svgNode?.parentElement as HTMLElement | null;
+
+    // 在 SVG 父容器中创建标准 HTML div，避免 foreignObject 导致的 appendChild 问题
+    const container = document.createElement('div');
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.position = 'relative';
+
+    // 将容器插入到 svg 之后，作为同级元素
+    if (parent) {
+      parent.insertBefore(container, svgNode?.nextSibling ?? null);
+    } else {
+      // 兜底：若未找到父元素，则附加到 body
+      document.body.appendChild(container);
+    }
+
+    this.container = container;
+    return container;
   }
 
   /**
-   * 创建VChart甘特图规格
+   * 创建VTable甘特图配置
    */
-  protected createVChartSpec(data: ExtractedGanttData, _config: GanttConfig): VChartSpec {
-    const { tasks, sections, title } = data;
+  protected createVTableConfig(data: ExtractedGanttData, _config: GanttConfig): VTableGanttConfig {
+    const { tasks, title } = data;
 
     if (!tasks || tasks.length === 0) {
       log.warn('No tasks found for Gantt chart');
-      return this.createEmptySpec() as VChartSpec;
+      return this.createEmptyConfig();
     }
 
-    // 计算时间范围
-    const startTimes = tasks.map((task) => task.start);
-    const endTimes = tasks.map((task) => task.end);
-    const minTime = Math.min(...startTimes);
-    const maxTime = Math.max(...endTimes);
-
-    // 创建VChart甘特图规格
-    const spec = {
-      type: 'common',
-      data: [
+    // 创建VTable甘特图配置
+    const config: VTableGanttConfig = {
+      data: tasks,
+      columns: [
         {
-          id: 'ganttData',
-          values: tasks,
+          title: '任务名称',
+          field: 'taskName',
+          width: 200,
+          style: {
+            fontWeight: 'bold',
+          },
+        },
+        {
+          title: '分组',
+          field: 'section',
+          width: 120,
+        },
+        {
+          title: '开始时间',
+          field: 'startTime',
+          width: 120,
+        },
+        {
+          title: '结束时间',
+          field: 'endTime',
+          width: 120,
+        },
+        {
+          title: '进度',
+          field: 'progress',
+          width: 80,
+        },
+        {
+          title: '状态',
+          field: 'status',
+          width: 80,
         },
       ],
-      // 甘特图字段映射
-      taskField: 'taskName',
-      startField: 'startDate',
-      endField: 'endDate',
-      progressField: 'progress',
-      groupField: 'group',
-
-      // 时间轴配置
-      timeAxis: {
-        orient: 'bottom',
-        type: 'time',
-        min: minTime,
-        max: maxTime,
-        tick: this.createTimeAxisTick(data),
-        label: {
-          formatMethod: (value: number) => {
-            return new Date(value).toLocaleDateString();
-          },
-        },
+      timeLineHeader: {
+        scales: [
+          { unit: 'day', step: 1, label: '日' },
+          { unit: 'week', step: 1, label: '周' },
+          { unit: 'month', step: 1, label: '月' },
+        ],
       },
-
-      // 分组轴配置
-      groupAxis: {
-        orient: 'left',
-        type: 'band',
-        domain: sections,
-        tick: {
-          visible: false,
-        },
-        grid: {
-          visible: true,
-          style: {
-            stroke: '#e8e8e8',
-            lineWidth: 1,
-          },
-        },
-      },
-
-      // 任务条样式
-      task: {
+      gantt: {
+        taskField: 'taskName',
+        startField: 'startTime',
+        endField: 'endTime',
+        progressField: 'progress',
+        groupField: 'section',
         style: {
-          fill: (datum: VChartGanttDataItem) => this.getTaskColor(datum),
-          stroke: '#fff',
-          strokeWidth: 1,
-          cornerRadius: 2,
-        },
-        state: {
-          hover: {
-            stroke: '#333',
+          taskBar: {
+            fill: (datum: VTableGanttDataItem) => this.getTaskColor(datum),
+            stroke: '#fff',
+            strokeWidth: 1,
+            cornerRadius: 2,
+          },
+          progressBar: {
+            fill: '#4CAF50',
+            fillOpacity: 0.8,
+          },
+          milestone: {
+            symbolType: 'diamond',
+            size: 8,
+            fill: '#FF9800',
+            stroke: '#fff',
             strokeWidth: 2,
           },
-        },
-      },
-
-      // 进度条样式
-      progress: {
-        visible: true,
-        style: {
-          fill: '#4CAF50',
-          fillOpacity: 0.8,
-        },
-      },
-
-      // 里程碑样式
-      milestone: {
-        visible: true,
-        style: {
-          symbolType: 'diamond',
-          size: 8,
-          fill: '#FF9800',
-          stroke: '#fff',
-          strokeWidth: 2,
-        },
-      },
-
-      // 标签配置
-      label: {
-        visible: true,
-        position: 'inside',
-        style: {
-          fontSize: 12,
-          fill: '#fff',
-          fontWeight: 'normal',
-        },
-        formatMethod: (datum: VChartGanttDataItem) => {
-          return datum.taskName;
-        },
-      },
-
-      // 网格线配置
-      grid: {
-        visible: true,
-        style: {
-          stroke: '#e8e8e8',
-          strokeOpacity: 0.5,
-        },
-      },
-
-      // 工具提示
-      tooltip: {
-        visible: true,
-        mark: {
-          content: [
-            {
-              key: '任务',
-              value: (datum: VChartGanttDataItem) => datum.taskName,
-            },
-            {
-              key: '开始时间',
-              value: (datum: VChartGanttDataItem) => new Date(datum.startDate).toLocaleDateString(),
-            },
-            {
-              key: '结束时间',
-              value: (datum: VChartGanttDataItem) => new Date(datum.endDate).toLocaleDateString(),
-            },
-            {
-              key: '进度',
-              value: (datum: VChartGanttDataItem) => `${Math.round(datum.progress * 100)}%`,
-            },
-            {
-              key: '状态',
-              value: (datum: VChartGanttDataItem) => datum.status,
-            },
-          ],
-        },
-      },
-
-      // 动画配置
-      animation: {
-        appear: {
-          duration: 1000,
-          easing: 'cubicOut',
-        },
-        enter: {
-          type: 'fadeIn',
-          duration: 500,
-        },
-      },
-
-      // 交互配置
-      interaction: {
-        brush: {
-          visible: true,
-          brushType: 'x',
-        },
-        zoom: {
-          visible: true,
-          zoomType: 'x',
         },
       },
     };
 
     // 添加标题
     if (title) {
-      (spec as Record<string, unknown>).title = {
+      config.title = {
         visible: true,
         text: title,
         align: 'center',
@@ -511,39 +374,54 @@ class GanttVChartRenderer extends VChartRenderer {
       };
     }
 
-    log.debug('Generated VChart Gantt spec:', spec);
-    return spec;
+    log.debug('Generated VTable Gantt config:', config);
+    return config;
   }
 
   /**
-   * 创建时间轴刻度配置
+   * 渲染VTable甘特图
    */
-  private createTimeAxisTick(data: ExtractedGanttData): TimeAxisTick {
-    const tickInterval = data.tickInterval;
-    if (tickInterval) {
-      // 解析tickInterval格式，如 "1day", "1week" 等
-      const match = /^(\d+)(day|week|month|year)$/.exec(tickInterval);
-      if (match) {
-        const count = parseInt(match[1]);
-        const unit = match[2];
+  protected async renderVTable(
+    config: VTableGanttConfig,
+    container: HTMLElement,
+    width: number,
+    height: number
+  ): Promise<unknown> {
+    try {
+      // 动态导入VTable Gantt
+      const { Gantt } = await import('@visactor/vtable-gantt');
 
-        return {
-          count,
-          unit,
-        };
+      // 设置容器尺寸
+      container.style.width = `${width}px`;
+      container.style.height = `${height}px`;
+
+      // 创建VTable甘特图实例
+      // VTable Gantt 构造函数期望第一个参数是容器元素，第二个参数是配置对象
+      this.gantt = new Gantt(container, {
+        ...config,
+        width,
+        height,
+        timelineHeader: config.timeLineHeader,
+      } as any);
+
+      // 渲染甘特图（某些版本构造后即自动渲染，render 可能不存在）
+      const maybeRender = (this.gantt as any)?.render;
+      if (typeof maybeRender === 'function') {
+        maybeRender.call(this.gantt);
       }
-    }
 
-    return {
-      count: 1,
-      unit: 'day',
-    };
+      log.debug('VTable Gantt rendered successfully');
+      return this.gantt;
+    } catch (error) {
+      log.error('Failed to render VTable Gantt:', error);
+      throw new Error(`VTable Gantt rendering failed: ${String(error)}`);
+    }
   }
 
   /**
    * 获取任务颜色
    */
-  private getTaskColor(datum: VChartGanttDataItem): string {
+  private getTaskColor(datum: VTableGanttDataItem): string {
     switch (datum.status) {
       case 'done':
         return '#4CAF50'; // 绿色
@@ -557,17 +435,28 @@ class GanttVChartRenderer extends VChartRenderer {
   }
 
   /**
-   * 创建空的图表规格
+   * 创建空的甘特图配置
    */
-  private createEmptySpec(): Partial<VChartSpec> {
+  private createEmptyConfig(): VTableGanttConfig {
     return {
-      type: 'gantt',
-      data: [
+      data: [],
+      columns: [
         {
-          id: 'ganttData',
-          values: [],
+          title: '任务名称',
+          field: 'taskName',
+          width: 200,
         },
       ],
+      timeLineHeader: {
+        scales: [{ unit: 'day', step: 1, label: '日' }],
+      },
+      gantt: {
+        taskField: 'taskName',
+        startField: 'startTime',
+        endField: 'endTime',
+        progressField: 'progress',
+        groupField: 'section',
+      },
       title: {
         visible: true,
         text: '无数据',
@@ -581,84 +470,125 @@ class GanttVChartRenderer extends VChartRenderer {
   }
 
   /**
-   * 应用mermaid主题到VChart
+   * 应用mermaid主题到VTable
    */
-  protected applyTheme(spec: VChartSpec, themeVariables: ThemeVariables): VChartSpec {
+  protected applyTheme(
+    config: VTableGanttConfig,
+    themeVariables: ThemeVariables
+  ): VTableGanttConfig {
     if (!themeVariables) {
-      return spec;
+      return config;
     }
 
     // 应用颜色主题
     const colorScheme = {
-      done: themeVariables.doneTaskBkgColor || '#4CAF50',
-      active: themeVariables.activeTaskBkgColor || '#2196F3',
-      critical: themeVariables.critBkgColor || '#F44336',
-      normal: themeVariables.taskBkgColor || '#9E9E9E',
+      done: themeVariables.doneTaskBkgColor ?? '#4CAF50',
+      active: themeVariables.activeTaskBkgColor ?? '#2196F3',
+      critical: themeVariables.critBkgColor ?? '#F44336',
+      normal: themeVariables.taskBkgColor ?? '#9E9E9E',
     };
 
-    // 更新任务样式
-    spec.task = {
-      ...spec.task,
-      style: {
-        ...spec.task?.style,
-        fill: (datum: VChartGanttDataItem) =>
-          colorScheme[datum.status as keyof typeof colorScheme] || colorScheme.normal,
-      },
-    };
+    // 更新任务条样式
+    if (config.gantt?.style?.taskBar) {
+      config.gantt.style.taskBar.fill = (datum: VTableGanttDataItem) =>
+        colorScheme[datum.status as keyof typeof colorScheme] ?? colorScheme.normal;
+    }
 
     // 应用字体配置
     if (themeVariables.fontFamily) {
-      spec.label = {
-        ...spec.label,
-        style: {
-          ...spec.label?.style,
-          fontFamily: themeVariables.fontFamily,
-        } as typeof spec.label.style & { fontFamily?: string },
+      config.theme = {
+        ...config.theme,
+        fontFamily: themeVariables.fontFamily,
       };
 
-      if (spec.title) {
-        spec.title.style = {
-          ...spec.title.style,
+      if (config.title) {
+        config.title.style = {
+          ...config.title.style,
           fontFamily: themeVariables.fontFamily,
-        } as typeof spec.title.style & { fontFamily?: string };
+        };
       }
     }
 
-    // 应用网格颜色
-    if (themeVariables.gridColor) {
-      spec.grid = {
-        ...spec.grid,
-        style: {
-          ...spec.grid?.style,
-          stroke: themeVariables.gridColor,
-        },
-      };
-    }
+    // 应用主题颜色方案
+    config.theme = {
+      ...config.theme,
+      colorScheme,
+    };
 
-    // 应用背景色
-    if (themeVariables.background) {
-      spec.background = themeVariables.background;
-    }
+    return config;
+  }
 
-    return spec;
+  /**
+   * 清理资源
+   */
+  public dispose(): void {
+    if (this.gantt) {
+      (this.gantt as any).release?.();
+      this.gantt = null;
+    }
+    this.container = null;
+  }
+
+  /**
+   * 通用的绘制方法模板
+   */
+  public async render(
+    text: string,
+    id: string,
+    _version: string,
+    diagObj: unknown,
+    width: number,
+    height: number
+  ): Promise<void> {
+    log.debug(`Rendering ${this.constructor.name} with VTable\n${text}`);
+
+    try {
+      // 获取数据和配置
+      const db = (diagObj as any).db;
+      const config = db.getConfig();
+      const data = this.extractData(db);
+
+      // 创建VTable甘特图配置
+      let ganttConfig = this.createVTableConfig(data, config);
+
+      // 应用主题
+      const { themeVariables } = (diagObj as any).globalConfig ?? {};
+      if (themeVariables) {
+        ganttConfig = this.applyTheme(ganttConfig, themeVariables);
+      }
+
+      // 初始化容器
+      const container = this.initContainer(id);
+
+      // 渲染甘特图
+      await this.renderVTable(ganttConfig, container, width, height);
+
+      // 配置SVG大小
+      const svg = selectSvgElement(id);
+      configureSvgSize(svg, height, width, config?.useMaxWidth);
+    } catch (error) {
+      log.error(`Failed to render ${this.constructor.name}:`, error);
+      // 回退到错误状态或默认渲染器
+      throw error;
+    }
   }
 }
 
 /**
- * VChart甘特图绘制函数
+ * VTable甘特图绘制函数
  */
-const drawWithVChart: DrawDefinition = async (text, id, _version, diagObj) => {
-  log.debug('rendering gantt chart with VChart\n' + text);
+const drawWithVTable: DrawDefinition = async (text, id, _version, diagObj) => {
+  log.debug('rendering gantt chart with VTable\n' + text);
 
   const db = diagObj.db;
   const globalConfig = getConfig();
-  const ganttConfig = cleanAndMerge(db.getConfig ? db.getConfig() : {}, globalConfig.gantt || {});
+  const ganttConfig = cleanAndMerge(db.getConfig ? db.getConfig() : {}, globalConfig.gantt ?? {});
 
-  const renderer = new GanttVChartRenderer();
+  const renderer = new GanttVTableRenderer();
 
   try {
     // 设置图表尺寸
-    const width = ganttConfig?.useWidth || 1200;
+    const width = ganttConfig?.useWidth ?? 1200;
     const height = 600;
 
     // 渲染图表
@@ -674,13 +604,13 @@ const drawWithVChart: DrawDefinition = async (text, id, _version, diagObj) => {
       height
     );
 
-    log.debug('Gantt chart rendered successfully with VChart');
+    log.debug('Gantt chart rendered successfully with VTable');
   } catch (error) {
-    log.error('Failed to render gantt chart with VChart:', error);
+    log.error('Failed to render gantt chart with VTable:', error);
     throw error;
   } finally {
     renderer.dispose();
   }
 };
 
-export { drawWithVChart };
+export { drawWithVTable };

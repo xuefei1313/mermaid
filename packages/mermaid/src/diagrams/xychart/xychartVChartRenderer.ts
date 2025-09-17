@@ -11,13 +11,15 @@ class XYChartVChartRenderer extends VChartRenderer {
     const xyChartData = db.getXYChartData();
 
     log.debug('XY Chart data:', xyChartData);
+    log.debug('Plots count:', xyChartData?.plots?.length);
+    log.debug('Plots data:', xyChartData?.plots);
 
     if (!xyChartData?.plots?.length) {
       log.warn('No plot data found for XY chart');
       return {
         data: [],
-        xField: 'x',
-        yField: 'y',
+        xField: 'category',
+        yField: 'value',
         type: 'line',
         chartType: 'line',
         plots: [],
@@ -29,25 +31,28 @@ class XYChartVChartRenderer extends VChartRenderer {
 
     const transformedData: any[] = [];
 
-    // 处理每个层的数据
+    // 处理每个层的数据，转换为VChart期望的格式
     xyChartData.plots.forEach((plot: any, plotIndex: number) => {
       plot.data.forEach((dataPoint: any) => {
         const [xValue, yValue] = dataPoint;
         transformedData.push({
-          x: xValue,
-          y: yValue,
+          category: xValue,
+          value: yValue,
           series: `Series ${plotIndex + 1}`,
           type: plot.type, // 'line' 或 'bar'
         });
       });
     });
 
+    const chartType = this.determineChartType(xyChartData);
+    log.debug('Determined chart type:', chartType);
+
     return {
       data: transformedData,
-      xField: 'x',
-      yField: 'y',
+      xField: 'category',
+      yField: 'value',
       seriesField: 'series',
-      chartType: this.determineChartType(xyChartData),
+      chartType: chartType,
       plots: xyChartData.plots,
       xAxis: xyChartData.xAxis,
       yAxis: xyChartData.yAxis,
@@ -62,12 +67,17 @@ class XYChartVChartRenderer extends VChartRenderer {
     // 如果包含多种类型的图层，使用组合图表
     const plotTypes = new Set(xyChartData.plots.map((plot: any) => plot.type));
 
+    log.debug('Plot types found:', [...plotTypes]);
+    log.debug('Number of plot types:', plotTypes.size);
+
     if (plotTypes.size > 1) {
+      log.debug('Multiple plot types detected, using common chart type');
       return 'common'; // VChart组合图表
     }
 
     // 单一类型图表
     const firstPlotType = xyChartData.plots[0]?.type;
+    log.debug('Single plot type detected:', firstPlotType);
     switch (firstPlotType) {
       case 'line':
         return 'line';
@@ -131,22 +141,30 @@ class XYChartVChartRenderer extends VChartRenderer {
         });
       });
     } else {
+      // 单一类型图表的数据格式
+      const chartData = data.data.map((item: any) => ({
+        category: item.category,
+        value: item.value,
+      }));
+
       spec.data = [
         {
           id: 'data',
-          values: data.data,
+          values: chartData,
         },
       ];
 
       spec.xField = data.xField;
       spec.yField = data.yField;
-      spec.seriesField = data.seriesField;
+      if (data.plots.length > 1) {
+        spec.seriesField = data.seriesField;
+      }
     }
     const isHorizontal = _config.chartOrientation === 'horizontal';
     let xAxisConfig, yAxisConfig;
 
     if (isHorizontal) {
-      //x为数值，y为分类
+      // 水平图表：x为数值轴，y为分类轴
       xAxisConfig = {
         orient: 'bottom',
         type: 'linear',
@@ -159,18 +177,14 @@ class XYChartVChartRenderer extends VChartRenderer {
       };
       yAxisConfig = {
         orient: 'left',
-        type: data.xAxis?.type === 'linear' ? 'linear' : 'band',
+        type: 'band',
         title: {
           visible: !!data.xAxis?.title,
           text: data.xAxis?.title ?? '',
         },
-        ...(data.xAxis?.type === 'linear' && {
-          min: data.xAxis?.min,
-          max: data.xAxis?.max,
-        }),
       };
     } else {
-      // 垂直图表：x为分类，y轴为数值
+      // 垂直图表：x为分类/线性轴，y为数值轴
       xAxisConfig = {
         orient: 'bottom',
         type: data.xAxis?.type === 'linear' ? 'linear' : 'band',
@@ -222,6 +236,7 @@ class XYChartVChartRenderer extends VChartRenderer {
     };
 
     log.debug('VChart spec for XY chart:', spec);
+    log.debug('Final chart type:', spec.type);
     return spec;
   }
 
@@ -237,14 +252,32 @@ class XYChartVChartRenderer extends VChartRenderer {
       themeVariables.secondaryBorderColor || '#feca57',
     ];
 
-    return {
+    const themedSpec = {
       ...spec,
       color: colors,
-      background: themeVariables.background ?? '#ffffff',
       theme: {
         fontFamily: themeVariables.fontFamily ?? 'Arial, sans-serif',
       },
     };
+
+    // 应用背景色
+    if (themeVariables.backgroundColor) {
+      themedSpec.background = themeVariables.backgroundColor;
+    }
+
+    // 应用标题样式
+    if (themedSpec.title && themeVariables.titleColor) {
+      themedSpec.title = {
+        ...themedSpec.title,
+        style: {
+          text: {
+            fill: themeVariables.titleColor,
+          },
+        },
+      };
+    }
+
+    return themedSpec;
   }
 }
 
@@ -257,6 +290,18 @@ export const drawWithVChart: DrawDefinition = async (text, id, _version, diagObj
   const db = diagObj.db as typeof XYChartDB;
   const config = db.getChartConfig();
 
+  // 扩展 diagObj 以包含主题变量和重写getConfig方法
+  const extendedDiagObj = {
+    ...diagObj,
+    globalConfig: {
+      themeVariables: db.getChartThemeConfig(),
+    },
+    db: {
+      ...db,
+      getConfig: () => config, // 确保基类使用正确的配置
+    },
+  };
+
   const renderer = new XYChartVChartRenderer();
-  await renderer.render(text, id, _version, diagObj, config.width, config.height);
+  await renderer.render(text, id, _version, extendedDiagObj, config.width, config.height);
 };

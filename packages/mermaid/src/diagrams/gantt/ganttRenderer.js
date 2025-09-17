@@ -791,8 +791,8 @@ export const draw = function (text, id, version, diagObj) {
   }
 };
 
-// 导入VChart渲染器
-import { drawWithVChart } from './ganttVChartRenderer.js';
+// 导入VTable渲染器
+import { drawWithVTable } from './ganttVChartRenderer.js';
 
 // 条件渲染器
 const conditionalDraw = async (text, id, _version, diagObj) => {
@@ -803,8 +803,8 @@ const conditionalDraw = async (text, id, _version, diagObj) => {
   if (config.renderer === 'vchart') {
     try {
       // 检查VChart是否可用
-      await import('@visactor/vchart');
-      return await drawWithVChart(text, id, _version, diagObj);
+      await import('@visactor/vtable-gantt');
+      return await drawWithVTable(text, id, _version, diagObj);
     } catch (error) {
       log.warn('VChart not available, falling back to default renderer:', error);
     }

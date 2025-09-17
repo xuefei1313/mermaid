@@ -285,7 +285,45 @@ describe('XYChart VChart Renderer', () => {
   });
 
   it('should render combination chart with VChart', async () => {
-    // Use default mock data with both bar and line plots
+    // Mock data for combination chart with both bar and line plots
+    mockXYChartDB.getXYChartData.mockReturnValue({
+      title: 'Combination Chart Test',
+      xAxis: {
+        type: 'band',
+        title: 'X Axis',
+        categories: ['A', 'B', 'C', 'D'],
+      },
+      yAxis: {
+        type: 'linear',
+        title: 'Y Axis',
+        min: 0,
+        max: 100,
+      },
+      plots: [
+        {
+          type: 'bar',
+          fill: '#1f77b4',
+          data: [
+            ['A', 10],
+            ['B', 20],
+            ['C', 30],
+            ['D', 40],
+          ],
+        },
+        {
+          type: 'line',
+          strokeFill: '#ff7f0e',
+          strokeWidth: 2,
+          data: [
+            ['A', 15],
+            ['B', 25],
+            ['C', 35],
+            ['D', 45],
+          ],
+        },
+      ],
+    });
+
     await drawWithVChart('test text', 'test-id', '1.0.0', mockDiagram);
 
     expect(mockVChart.renderAsync).toHaveBeenCalled();

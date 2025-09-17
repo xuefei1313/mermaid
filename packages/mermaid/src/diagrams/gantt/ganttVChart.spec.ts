@@ -1,23 +1,22 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { drawWithVChart } from './ganttVChartRenderer.js';
+import { drawWithVTable } from './ganttVChartRenderer.js';
 
-// Mock VChart
-const mockVChart = {
-  renderAsync: vi.fn().mockResolvedValue(undefined),
+// Mock VTable Gantt
+const mockGantt = {
+  render: vi.fn(),
   release: vi.fn(),
 };
 
-vi.mock('@visactor/vchart', () => ({
-  VChart: vi.fn().mockImplementation(() => mockVChart),
+vi.mock('@visactor/vtable-gantt', () => ({
+  Gantt: vi.fn().mockImplementation(() => mockGantt),
 }));
 
 // Mock selectSvgElement
 vi.mock('../../rendering-util/selectSvgElement.js', () => ({
   selectSvgElement: vi.fn().mockReturnValue({
-    append: vi.fn().mockReturnValue({
-      attr: vi.fn().mockReturnThis(),
-      style: vi.fn().mockReturnThis(),
-      node: vi.fn().mockReturnValue(document.createElement('div')),
+    node: vi.fn().mockReturnValue({
+      parentElement: document.createElement('div'),
+      nextSibling: null,
     }),
   }),
 }));
@@ -141,15 +140,15 @@ gantt
     里程碑1  :milestone, milestone1, 2024-01-08, 0d
     `;
 
-    await expect(drawWithVChart(text, 'gantt-test', '1.0.0', mockDiagObj)).resolves.not.toThrow();
+    await expect(drawWithVTable(text, 'gantt-test', '1.0.0', mockDiagObj)).resolves.not.toThrow();
 
-    expect(mockVChart.renderAsync).toHaveBeenCalled();
+    expect(mockGantt.render).toHaveBeenCalled();
   });
 
   it('应该正确提取甘特图数据', async () => {
     const text = 'gantt\n    title 测试甘特图';
 
-    await drawWithVChart(text, 'gantt-test', '1.0.0', mockDiagObj);
+    await drawWithVTable(text, 'gantt-test', '1.0.0', mockDiagObj);
 
     expect(mockDb.getTasks).toHaveBeenCalled();
     expect(mockDb.getSections).toHaveBeenCalled();
@@ -170,17 +169,17 @@ gantt
     };
 
     await expect(
-      drawWithVChart('gantt', 'gantt-empty', '1.0.0', emptyDiagObj)
+      drawWithVTable('gantt', 'gantt-empty', '1.0.0', emptyDiagObj)
     ).resolves.not.toThrow();
   });
 
   it('应该正确应用主题变量', async () => {
     const text = 'gantt\n    title 主题测试';
 
-    await drawWithVChart(text, 'gantt-theme', '1.0.0', mockDiagObj);
+    await drawWithVTable(text, 'gantt-theme', '1.0.0', mockDiagObj);
 
     // VChart应该被调用并传入正确的规格
-    expect(mockVChart.renderAsync).toHaveBeenCalled();
+    expect(mockGantt.render).toHaveBeenCalled();
   });
 
   it('应该处理不同类型的任务', async () => {
@@ -266,10 +265,10 @@ gantt
     };
 
     await expect(
-      drawWithVChart('gantt', 'gantt-mixed', '1.0.0', mixedDiagObj)
+      drawWithVTable('gantt', 'gantt-mixed', '1.0.0', mixedDiagObj)
     ).resolves.not.toThrow();
 
-    expect(mockVChart.renderAsync).toHaveBeenCalled();
+    expect(mockGantt.render).toHaveBeenCalled();
   });
 
   it('应该正确处理时间间隔配置', async () => {
@@ -284,7 +283,7 @@ gantt
     };
 
     await expect(
-      drawWithVChart('gantt', 'gantt-interval', '1.0.0', intervalDiagObj)
+      drawWithVTable('gantt', 'gantt-interval', '1.0.0', intervalDiagObj)
     ).resolves.not.toThrow();
 
     expect(intervalDb.getTickInterval).toHaveBeenCalled();
@@ -302,18 +301,18 @@ gantt
     };
 
     await expect(
-      drawWithVChart('gantt', 'gantt-error', '1.0.0', errorDiagObj)
+      drawWithVTable('gantt', 'gantt-error', '1.0.0', errorDiagObj)
     ).resolves.not.toThrow();
   });
 
   it('应该清理VChart资源', async () => {
     const text = 'gantt\n    title 资源清理测试';
 
-    await drawWithVChart(text, 'gantt-cleanup', '1.0.0', mockDiagObj);
+    await drawWithVTable(text, 'gantt-cleanup', '1.0.0', mockDiagObj);
 
     // 渲染器应该调用dispose方法来清理资源
     // 这里我们验证VChart实例已经被创建
-    expect(mockVChart.renderAsync).toHaveBeenCalled();
+    expect(mockGantt.render).toHaveBeenCalled();
   });
 
   it('应该支持自定义尺寸', async () => {
@@ -331,9 +330,9 @@ gantt
     };
 
     await expect(
-      drawWithVChart('gantt', 'gantt-custom-size', '1.0.0', customDiagObj)
+      drawWithVTable('gantt', 'gantt-custom-size', '1.0.0', customDiagObj)
     ).resolves.not.toThrow();
 
-    expect(mockVChart.renderAsync).toHaveBeenCalled();
+    expect(mockGantt.render).toHaveBeenCalled();
   });
 });

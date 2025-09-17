@@ -145,6 +145,7 @@ vchart
 verifymethod
 VERIFYMTHD
 visactor
+vtable
 WARN_DOCSDIR_DOESNT_MATCH
 xhost
 yaxis

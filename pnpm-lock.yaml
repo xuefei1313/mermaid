@@ -232,6 +232,12 @@ importers:
       '@visactor/vchart':
         specifier: ^2.0.2
         version: 2.0.2
+      '@visactor/vtable':
+        specifier: ^1.19.9
+        version: 1.19.9
+      '@visactor/vtable-gantt':
+        specifier: ^1.19.9
+        version: 1.19.9
       cytoscape:
         specifier: ^3.29.3
         version: 3.31.0
@@ -3664,6 +3670,9 @@ packages:
   '@visactor/vchart@2.0.2':
     resolution: {integrity: sha512-9ERESHbN/HaTlNmT9yom28IsoJuIW0hO4ngrtXwvQwqMEOoimly+BaDUiq0emFSUXGnDTbv5sVai1OQT/17xyA==}
 
+  '@visactor/vdataset@0.18.18':
+    resolution: {integrity: sha512-lye23zpineMKV42JmuJaOY3fgl7aWhyDIwK9dWooqZzP14AFukPoK7ZvUeuKZihLrHxqtCg2VWEjovnh9O1RUg==}
+
   '@visactor/vdataset@1.0.9':
     resolution: {integrity: sha512-8OJWm8rZ1ss46r7BgO7L7se0qb28Ygk1yd999tV5SsN7R06sgB08l6ZP8dbvAXlYW08FWLYXc5RmCTRVG8mL2Q==}
 
@@ -3682,14 +3691,35 @@ packages:
   '@visactor/vrender-kits@1.0.9':
     resolution: {integrity: sha512-X5CCWEJt4AcfIcbkdScKJjr7tRBCta7SrltsjeMH+RDmNEzPxNJhvxgzpxePAOaWmJVR8TEKgT3cyx3bOU+EHg==}
 
+  '@visactor/vscale@0.18.18':
+    resolution: {integrity: sha512-iRG4kv+5Fv4KX3AxEfV95XU3I6OmF0QizyAhqHxKa7L1MaT+MRvDDk5zHWf1E8gialLbL2xDe3GnT6g/4u5jhA==}
+
   '@visactor/vscale@1.0.6':
     resolution: {integrity: sha512-E6ySrzOIyL85luy5dKPpKzaCjf/hkLFF/mAn37Lv8XJWhyxWjYO29GM7cIlqDNCKAY0qsONPnfmgdGX+Hoe5vg==}
 
   '@visactor/vscale@1.0.9':
     resolution: {integrity: sha512-8u7ousY+Yo9smgcPyFePYl45sD4VXciQf9JOAc2jncNFIyZch7/2Li2CvqL3HPrdenjrl1twAVc5C5IPbyEUyQ==}
 
+  '@visactor/vtable-editors@1.19.9':
+    resolution: {integrity: sha512-5Op1HVGvvnANltkeiOV4GJGo7vnedQcIMqgBSXEIYM2OxjtdrfXUkbWrJ4pyBBQTQeLanFDz5iHWFfOf5nabgg==}
+
+  '@visactor/vtable-gantt@1.19.9':
+    resolution: {integrity: sha512-pnYsbWtci+uCfM9gW3NA/W8kWXw5PCrfs6SFh/NWFZQFDx2czyTPaunTKH7sgYrFS85xyAIPic4BUKEoXkjsYg==}
+
+  '@visactor/vtable@1.19.9':
+    resolution: {integrity: sha512-3ZK/7E0s9G1Ne+PZ+/qGmt0Mmy1iTEYxxh1I1RXBww7rNjA/mz2LyKC2nvQmpTHs5Rvv5RU+ECOehU7l+Bpl8A==}
+
+  '@visactor/vutils-extension@1.11.14':
+    resolution: {integrity: sha512-vfViZphXJBH0NwCHIoe8S1/+tDtykEKIfsLMIHprh7Azv7fVSB1eotG00SAegK75E18ARQGNXF1DxixUFiXSIQ==}
+
   '@visactor/vutils-extension@2.0.2':
     resolution: {integrity: sha512-qknQZmr6qnLrMOUXMnuLyFln3wTtOhFUNYoNpYyupwrPCIRleR8LKnBycJ1TRANFBZELSI1R5471T9hENUgz2w==}
+
+  '@visactor/vutils@0.18.18':
+    resolution: {integrity: sha512-byEJefqxiCz3UWe+YedEVjsdPtnJOAtKdRYi4qT9ojgACdd6QqlWs53Eb7PlMZgWDxVxqkxJP2bZnRKw+ME0Xg==}
+
+  '@visactor/vutils@0.19.7':
+    resolution: {integrity: sha512-1SSnkZgX1p/rSVIFEibrpN6rDdLfdETSI6lJI5JwV8I2paluM1mqz3jEeT3McmWygd/wyUVKAyoRxGXFKAsKEw==}
 
   '@visactor/vutils@1.0.6':
     resolution: {integrity: sha512-87/AYLrjY1rtvIT0N/9S+sESialMQUKYv7MDjLjUo37u0hmeL/AwRSGBSvjxdxayKHOmdwUK1BLpQrDIrssKLg==}
@@ -4955,6 +4985,9 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
+  cssfontparser@1.2.1:
+    resolution: {integrity: sha512-6tun4LoZnj7VN6YeegOVb67KBX/7JJsqvj+pv3ZA7F878/eN33AbGa5b/S/wXxS/tcp8nc40xRUrsPlxIyNUPg==}
+
   cssstyle@4.2.1:
     resolution: {integrity: sha512-9+vem03dMXG7gDmZ62uqmRiMRNtinIZ9ZyuF6BdxzfOD+FdN5hretzynkn0ReS2DO2GSw76RWHs0UmJPI2zUjw==}
     engines: {node: '>=18'}
@@ -5673,6 +5706,7 @@ packages:
   eslint-plugin-markdown@5.1.0:
     resolution: {integrity: sha512-SJeyKko1K6GwI0AN6xeCDToXDkfKZfXcexA6B+O2Wr2btUS9GrC+YgwSyVli5DJnctUHjFXcQ2cqTaAmVoLi2A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: Please use @eslint/markdown instead
     peerDependencies:
       eslint: '>=8'
 
@@ -14555,6 +14589,26 @@ snapshots:
       '@visactor/vutils': 1.0.9
       '@visactor/vutils-extension': 2.0.2
 
+  '@visactor/vdataset@0.18.18':
+    dependencies:
+      '@turf/flatten': 6.5.0
+      '@turf/helpers': 6.5.0
+      '@turf/rewind': 6.5.0
+      '@visactor/vutils': 0.18.18
+      d3-dsv: 2.0.0
+      d3-geo: 1.12.1
+      d3-hexbin: 0.2.2
+      d3-hierarchy: 3.1.2
+      eventemitter3: 4.0.7
+      geobuf: 3.0.2
+      geojson-dissolve: 3.1.0
+      path-browserify: 1.0.1
+      pbf: 3.3.0
+      point-at-length: 1.1.0
+      simple-statistics: 7.8.8
+      simplify-geojson: 1.0.5
+      topojson-client: 3.1.0
+
   '@visactor/vdataset@1.0.9':
     dependencies:
       '@turf/flatten': 6.5.0
@@ -14610,6 +14664,10 @@ snapshots:
       lottie-web: 5.13.0
       roughjs: 4.5.2(patch_hash=vxb6t6fqvzyhwhtjiliqr25jyq)
 
+  '@visactor/vscale@0.18.18':
+    dependencies:
+      '@visactor/vutils': 0.18.18
+
   '@visactor/vscale@1.0.6':
     dependencies:
       '@visactor/vutils': 1.0.6
@@ -14618,10 +14676,53 @@ snapshots:
     dependencies:
       '@visactor/vutils': 1.0.9
 
+  '@visactor/vtable-editors@1.19.9': {}
+
+  '@visactor/vtable-gantt@1.19.9':
+    dependencies:
+      '@visactor/vdataset': 0.18.18
+      '@visactor/vscale': 0.18.18
+      '@visactor/vtable': 1.19.9
+      '@visactor/vtable-editors': 1.19.9
+      '@visactor/vutils': 0.19.7
+      cssfontparser: 1.2.1
+
+  '@visactor/vtable@1.19.9':
+    dependencies:
+      '@visactor/vdataset': 0.18.18
+      '@visactor/vrender-animate': 1.0.9
+      '@visactor/vrender-components': 1.0.9
+      '@visactor/vrender-core': 1.0.9
+      '@visactor/vrender-kits': 1.0.9
+      '@visactor/vscale': 0.18.18
+      '@visactor/vtable-editors': 1.19.9
+      '@visactor/vutils': 0.19.7
+      '@visactor/vutils-extension': 1.11.14
+      cssfontparser: 1.2.1
+      gifuct-js: 2.1.2
+      lodash: 4.17.21
+
+  '@visactor/vutils-extension@1.11.14':
+    dependencies:
+      '@visactor/vdataset': 0.18.18
+      '@visactor/vutils': 0.18.18
+
   '@visactor/vutils-extension@2.0.2':
     dependencies:
       '@visactor/vdataset': 1.0.9
       '@visactor/vutils': 1.0.9
+
+  '@visactor/vutils@0.18.18':
+    dependencies:
+      '@turf/helpers': 6.5.0
+      '@turf/invariant': 6.5.0
+      eventemitter3: 4.0.7
+
+  '@visactor/vutils@0.19.7':
+    dependencies:
+      '@turf/helpers': 6.5.0
+      '@turf/invariant': 6.5.0
+      eventemitter3: 4.0.7
 
   '@visactor/vutils@1.0.6':
     dependencies:
@@ -16141,6 +16242,8 @@ snapshots:
       source-map-js: 1.2.1
 
   cssesc@3.0.0: {}
+
+  cssfontparser@1.2.1: {}
 
   cssstyle@4.2.1:
     dependencies:

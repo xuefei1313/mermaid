@@ -72,6 +72,8 @@
     "@mermaid-js/parser": "workspace:^",
     "@types/d3": "^7.4.3",
     "@visactor/vchart": "^2.0.2",
+    "@visactor/vtable": "^1.19.9",
+    "@visactor/vtable-gantt": "^1.19.9",
     "cytoscape": "^3.29.3",
     "cytoscape-cose-bilkent": "^4.1.0",
     "cytoscape-fcose": "^2.2.0",
