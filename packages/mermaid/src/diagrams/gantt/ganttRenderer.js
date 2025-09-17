@@ -374,7 +374,7 @@ export const draw = function (text, id, version, diagObj) {
       .attr('font-size', conf.fontSize)
       .attr('x', function (d) {
         let startX = timeScale(d.startTime);
-        let endX = timeScale(d.renderEndTime || d.endTime);
+        let endX = timeScale(d.renderEndTime ?? d.endTime);
         if (d.milestone) {
           startX += 0.5 * (timeScale(d.endTime) - timeScale(d.startTime)) - 0.5 * theBarHeight;
         }
@@ -791,7 +791,30 @@ export const draw = function (text, id, version, diagObj) {
   }
 };
 
+// 导入VChart渲染器
+import { drawWithVChart } from './ganttVChartRenderer.js';
+
+// 条件渲染器
+const conditionalDraw = async (text, id, _version, diagObj) => {
+  const db = diagObj.db;
+  const config = db.getConfig();
+
+  // 检查是否使用VChart渲染器
+  if (config.renderer === 'vchart') {
+    try {
+      // 检查VChart是否可用
+      await import('@visactor/vchart');
+      return await drawWithVChart(text, id, _version, diagObj);
+    } catch (error) {
+      log.warn('VChart not available, falling back to default renderer:', error);
+    }
+  }
+
+  // 使用默认D3渲染器
+  return draw(text, id, _version, diagObj);
+};
+
 export default {
   setConf,
-  draw,
+  draw: conditionalDraw,
 };
