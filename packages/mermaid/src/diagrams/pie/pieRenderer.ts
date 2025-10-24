@@ -181,4 +181,27 @@ export const draw: DrawDefinition = (text, id, _version, diagObj) => {
   configureSvgSize(svg, height, totalWidth, pieConfig.useMaxWidth);
 };
 
-export const renderer = { draw };
+// 导入VChart渲染器
+import { drawWithVChart } from './pieVChartRenderer.js';
+
+// 条件渲染器
+const conditionalDraw: DrawDefinition = async (text, id, _version, diagObj) => {
+  const db = diagObj.db as PieDB;
+  const config = db.getConfig();
+
+  // 检查是否使用VChart渲染器
+  if (config.renderer === 'vchart') {
+    try {
+      // 检查VChart是否可用
+      await import('@visactor/vchart');
+      return await drawWithVChart(text, id, _version, diagObj);
+    } catch (error) {
+      log.warn('VChart not available, falling back to default renderer:', error);
+    }
+  }
+
+  // 使用默认D3渲染器
+  return draw(text, id, _version, diagObj);
+};
+
+export const renderer = { draw: conditionalDraw };

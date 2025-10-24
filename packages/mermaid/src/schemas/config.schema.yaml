@@ -993,6 +993,16 @@ $defs: # JSON Schema definition (maybe we should move these to a separate file)
     type: object
     unevaluatedProperties: false
     properties:
+      renderer:
+        description: |
+          Decides which rendering engine to use for pie chart rendering.
+          - default: Use the original D3-based pie chart renderer
+          - vchart: Use VChart for enhanced rendering capabilities
+        type: string
+        enum:
+          - default
+          - vchart
+        default: default
       textPosition:
         type: number
         minimum: 0
@@ -1208,6 +1218,16 @@ $defs: # JSON Schema definition (maybe we should move these to a separate file)
       - chartOrientation
       - plotReservedSpacePercent
     properties:
+      renderer:
+        description: |
+          Decides which rendering engine to use for XY chart rendering.
+          - default: Use the original custom XY chart renderer
+          - vchart: Use VChart for enhanced rendering capabilities
+        type: string
+        enum:
+          - default
+          - vchart
+        default: default
       width:
         description: width of the chart
         type: number
@@ -2163,6 +2183,16 @@ $defs: # JSON Schema definition (maybe we should move these to a separate file)
     type: object
     unevaluatedProperties: false
     properties:
+      renderer:
+        description: |
+          Decides which rendering engine to use for sankey diagram rendering.
+          - default: Use the original D3-sankey based renderer
+          - vchart: Use VChart for enhanced rendering capabilities
+        type: string
+        enum:
+          - default
+          - vchart
+        default: default
       width:
         type: number
         default: 600

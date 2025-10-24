@@ -75,6 +75,9 @@ Typora
 unocss
 unplugin
 unstub
+vchart
+visactor
 vite
 vitest
+vtable
 Zune

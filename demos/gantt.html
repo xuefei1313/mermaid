@@ -212,6 +212,69 @@
     </pre>
     <hr />
 
+    <!-- VChart渲染器测试 -->
+    <h2>VChart渲染器测试</h2>
+    <p>以下示例使用VChart渲染器进行渲染</p>
+
+    <pre class="mermaid">
+    %%{init: {"gantt": {"renderer": "vchart"}}}%%
+    gantt
+      title VChart甘特图测试 - 基础功能
+      dateFormat YYYY-MM-DD
+      section 开发阶段
+      需求分析    :done, req, 2024-01-01, 2024-01-05
+      系统设计    :active, design, 2024-01-03, 2024-01-10
+      编码实现    :crit, coding, after design, 10d
+      测试验收    :milestone, testing, 2024-01-20, 0d
+      section 部署阶段
+      环境准备    :env, 2024-01-18, 3d
+      系统部署    :deploy, after env, 2d
+      上线运行    :online, after deploy, 1d
+    </pre>
+    <hr />
+
+    <pre class="mermaid">
+    %%{init: {"gantt": {"renderer": "vchart"}}}%%
+    gantt
+      title VChart甘特图测试 - 复杂项目
+      dateFormat YYYY-MM-DD
+      axisFormat %m-%d
+      section 前端开发
+      组件设计     :done, fe1, 2024-01-01, 5d
+      页面开发     :active, fe2, after fe1, 8d
+      界面测试     :fe3, after fe2, 3d
+      section 后端开发
+      API设计      :done, be1, 2024-01-02, 4d
+      数据库设计   :done, be2, 2024-01-03, 3d
+      接口开发     :crit, be3, after be1, 10d
+      性能优化     :be4, after be3, 5d
+      section 测试阶段
+      单元测试     :test1, after fe2, 3d
+      集成测试     :crit, test2, after be3, 4d
+      用户测试     :test3, after test2, 3d
+      section 发布
+      预发布       :milestone, pre, after test3, 0d
+      正式发布     :milestone, release, after pre, 0d
+    </pre>
+    <hr />
+
+    <pre class="mermaid">
+    %%{init: {"gantt": {"renderer": "vchart"}}}%%
+    gantt
+      title VChart甘特图测试 - 紧凑模式
+      dateFormat HH:mm:ss
+      axisFormat %H:%M
+      section 数据处理
+      数据采集: 09:00:00, 30m
+      数据清洗: 09:30:00, 45m
+      数据分析: 10:15:00, 60m
+      section 报告生成
+      图表制作: 11:15:00, 40m
+      报告编写: 11:55:00, 35m
+      报告审核: 12:30:00, 25m
+    </pre>
+    <hr />
+
     <script>
       function ganttTestClick(a, b, c) {
         console.log('a:', a);
@@ -233,7 +296,10 @@
       mermaid.initialize({
         logLevel: 3,
         securityLevel: 'loose',
-        gantt: { axisFormat: '%m/%d/%Y' },
+        gantt: {
+          axisFormat: '%m/%d/%Y',
+          renderer: 'vchart',
+        },
       });
     </script>
   </body>
